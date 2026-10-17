@@ -69,8 +69,4 @@ Scam Spotter gives guidance, not a guarantee. Its rules cover common patterns, s
 
 ## Team
 
-[Add your team name and members here]
-
-## Credits
-
-Built with help from Claude, an AI assistant by Anthropic.
+LegacyBuilders
