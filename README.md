@@ -4,7 +4,7 @@ Paste a suspicious message. See the warning signs, the risk level and what to do
 
 Built for **SETU: Bridge the Gap. Build the Fix** (Forge Realm), Problem Statement **PS-01: Scam Spotter**.
 
-**Live demo:** https://YOUR-USERNAME.github.io/scam-spotter/
+**Live demo:** https://niteshnath820.github.io/scam-spotter/
 
 ## What it does
 
