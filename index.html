@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scam Spotter</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#14213d;--muted:#5b6478;--line:#dfe3ee;--accent:#1f4e79;--low:#1b7f4b;--lowbg:#e5f5ec;--med:#9a5b00;--medbg:#fff1d6;--high:#b3261e;--highbg:#fde8e6;--mark:#fff0b3;--markc:#ffd1cc}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1420;--card:#171e2d;--ink:#eaf0ff;--muted:#a3adc4;--line:#2a3550;--accent:#8ab4ff;--low:#58d08c;--lowbg:#12301f;--med:#ffc15a;--medbg:#3a2a08;--high:#ff8f87;--highbg:#3d1512;--mark:#5a4a00;--markc:#6b2320}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+header h1{margin:8px 0 2px;font-size:1.7rem;color:var(--accent)}
+header p{margin:0 0 14px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{font-weight:600;display:block;margin-bottom:6px}
+textarea{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;color:var(--ink);background:var(--bg)}
+textarea:focus,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+button{font:inherit;border-radius:10px;border:1px solid var(--accent);padding:10px 16px;cursor:pointer;background:var(--card);color:var(--accent);min-height:44px}
+button.primary{background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) button.primary{color:#0f1420}}
+.chip{font-size:.9rem;padding:6px 12px;min-height:36px;border-radius:999px}
+.hint{color:var(--muted);font-size:.9rem;margin:10px 0 0}
+#error{display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--medbg);color:var(--med);border:1px solid var(--med);font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1.25rem;padding:6px 14px;border-radius:999px;letter-spacing:.04em}
+.badge.Low{background:var(--lowbg);color:var(--low)}.badge.Medium{background:var(--medbg);color:var(--med)}.badge.High{background:var(--highbg);color:var(--high)}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.score{font-size:1.4rem;font-weight:800}
+.meter{position:relative;height:14px;border-radius:7px;margin:14px 0 4px;background:linear-gradient(90deg,var(--lowbg) 0 var(--m),var(--medbg) var(--m) var(--h),var(--highbg) var(--h) 100%);border:1px solid var(--line)}
+.pin{position:absolute;top:-5px;width:4px;height:22px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
+.scale{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}
+h2{font-size:1.1rem;margin:0 0 10px;color:var(--accent)}
+.msg{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px}
+mark{background:var(--mark);color:inherit;border-radius:4px;padding:1px 2px;border-bottom:2px solid var(--med)}
+mark.crit{background:var(--markc);border-bottom-color:var(--high)}
+mark sup{font-weight:800;font-size:.7em;margin-left:2px}
+.f{display:grid;grid-template-columns:34px 1fr auto;gap:4px 10px;padding:12px 0;border-top:1px solid var(--line)}
+.f:first-of-type{border-top:0}
+.num{grid-row:span 3;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .num{color:#0f1420}}
+.f .t{font-weight:700}.f .pts{font-weight:800;color:var(--high)}.f .pts.zero{color:var(--muted)}
+.f .q{color:var(--muted);word-break:break-word;grid-column:2/4}.f .w{grid-column:2/4}
+.q b{color:var(--ink)}
+ul.clean{margin:0;padding-left:20px}ul.clean li{margin:6px 0}
+.note{font-size:.92rem;color:var(--muted);margin:6px 0 0}
+details summary{cursor:pointer;font-weight:700;color:var(--accent);min-height:32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.grid label{font-weight:500;font-size:.9rem}.grid input{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+#domains{min-height:70px}
+.ok{color:var(--low);font-weight:700}
+@media (max-width:520px){.wrap{padding:12px}header h1{font-size:1.45rem}.f{grid-template-columns:30px 1fr}.f .pts{grid-column:2}.num{grid-row:span 4}.f .q,.f .w{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Scam Spotter</h1>
+  <p>Paste a suspicious message. See the warning signs, the risk level and what to do next.</p>
+</header>
+
+<section class="card">
+  <label for="msg">Message to check</label>
+  <textarea id="msg" placeholder="Paste the SMS, email or WhatsApp message here" aria-describedby="hint error"></textarea>
+  <div id="error" role="alert"></div>
+  <div class="row">
+    <button class="primary" id="check" type="button">Check message</button>
+    <button id="clear" type="button">Clear</button>
+  </div>
+  <p class="hint" id="hint">Your message is checked on this device only. It is not sent or stored anywhere. Try an example:</p>
+  <div class="row" id="examples"></div>
+</section>
+
+<div id="result" aria-live="polite"></div>
+
+<section class="card">
+  <details id="tune">
+    <summary>Tune the scoring rules</summary>
+    <p class="note">Every point value and threshold used by the checker is shown here and can be changed. The result updates straight away.</p>
+    <div class="grid" id="points"></div>
+    <div class="grid">
+      <label>Medium starts at<input type="number" id="t-medium" min="1" max="100"></label>
+      <label>High starts at<input type="number" id="t-high" min="1" max="100"></label>
+    </div>
+    <p class="note" style="margin-top:12px"><label for="domains" style="font-weight:600">Official domains (one per line, links to these are trusted)</label></p>
+    <textarea id="domains"></textarea>
+    <div class="row"><button id="reset" type="button">Reset to defaults</button></div>
+  </details>
+</section>
+<p class="note">Scam Spotter gives guidance, not a guarantee. If you are unsure, contact the organisation through its official app or website. India: report scams at cybercrime.gov.in or call 1930.</p>
+</div>
+
+<script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.ScamSpotter = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var DEFAULTS = {
+    points: { urgency: 20, threat: 15, credential: 40, bait: 20, payment: 20, contact: 10,
+              lookalike: 25, suspicious: 20, shortened: 15, unknown: 5 },
+    medium: 30,
+    high: 60,
+    official: ['sbi.co.in', 'onlinesbi.sbi', 'sbicard.com', 'hdfcbank.com', 'icicibank.com', 'axisbank.com',
+      'kotak.com', 'pnbindia.in', 'bankofbaroda.in', 'canarabank.com', 'unionbankofindia.co.in', 'paytm.com',
+      'phonepe.com', 'npci.org.in', 'uidai.gov.in', 'incometax.gov.in', 'cybercrime.gov.in', 'amazon.in',
+      'amazon.com', 'flipkart.com', 'delhivery.com', 'bluedart.com', 'dtdc.in', 'indiapost.gov.in',
+      'irctc.co.in', 'google.com', 'jio.com', 'airtel.in']
+  };
+  var OFFICIAL_SUFFIXES = ['.gov.in', '.nic.in', '.ac.in', '.edu.in'];
+
+  var CATEGORY = {
+    urgency:    { name: 'Fake urgency', why: 'Pressure stops people from thinking. Real banks and colleges give you time to check.' },
+    threat:     { name: 'Account threat', why: 'Scammers use fear of losing access, money or freedom to rush you.' },
+    credential: { name: 'OTP / password request', why: 'No bank, college or government office will ever ask you to share an OTP, PIN, password or CVV.', critical: true },
+    bait:       { name: 'Prize or refund bait', why: 'Surprise prizes, refunds and rewards are common bait. You cannot win a contest you never entered.' },
+    payment:    { name: 'Request to pay or send money', why: 'Being asked to pay a small fee to receive something is a common trick. Genuine payments go through the official app or website.' },
+    contact:    { name: 'Pushes you to a private number', why: 'Scammers move you to a private phone or chat where nobody can check what they say.' },
+    link:       { name: 'Link' }
+  };
+
+  var BRANDS = ['sbi', 'hdfc', 'icici', 'axis', 'kotak', 'pnb', 'paytm', 'phonepe', 'gpay', 'amazon', 'flipkart',
+    'delhivery', 'bluedart', 'dtdc', 'indiapost', 'irctc', 'npci', 'uidai', 'aadhaar', 'incometax', 'epfo', 'rbi',
+    'bank', 'netflix', 'jio', 'airtel'];
+  var ACTION_WORDS = ['verify', 'update', 'login', 'signin', 'secure', 'kyc', 'claim', 'refund', 'reward', 'prize',
+    'offer', 'gift', 'bonus', 'support', 'helpdesk', 'alert', 'confirm', 'unlock', 'reactivate', 'free'];
+  var BAD_TLDS = ['xyz', 'top', 'link', 'click', 'icu', 'tk', 'ml', 'ga', 'cf', 'gq', 'buzz', 'vip', 'club', 'online',
+    'site', 'live', 'work', 'shop', 'support', 'help', 'ws', 'cc', 'example'];
+  var SHORTENERS = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'cutt.ly', 'rb.gy', 'is.gd', 'shorturl.at', 'tiny.cc',
+    'ow.ly', 'bl.ink', 's.id', 'v.gd', 't.ly'];
+
+  var URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"')]+|\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|in|net|org|info|xyz|top|link|co|me|ly|gl|app|online|site|club|vip|cc|live|ru|tk|ml|ga|cf|gq|example|biz|shop|store|click|icu|work|support|help|bank|page|ws|buzz|sbi)\b(?:\/[^\s<>"')]*)?/gi;
+
+  var RULES = {
+    urgency: [
+      /\b(update|verify|act|pay|click|respond|call|submit|confirm|claim|share|login|log in|reply|complete|renew|recharge)\b[^.!?\n:]{0,30}?\b(now|immediately|urgently|today|asap|at once|right away)\b/gi,
+      /\b(urgent(?:ly)?|immediately|right now|act now|last chance|final (?:notice|warning|reminder)|asap|expires? (?:today|tonight|soon|in \d+ ?(?:hours?|hrs?|mins?|minutes?))|within \d+ ?(?:hours?|hrs?|mins?|minutes?)|limited time|hurry|turant|jaldi|fauran|abhi ke abhi)\b/gi
+    ],
+    threat: [
+      /\b(account|a\/c|card|sim|number|mobile number|service|services|connection|wallet|upi|kyc|pan|aadhaar|login|access|electricity|gas)\b[^.!?\n]{0,60}\b(blocked|suspended|closed|deactivated|disconnected|frozen|terminated|cancell?ed|expire[sd]?|incomplete|invalid|locked|restricted)\b/gi,
+      /\b(parcel|package|shipment|courier|delivery|consignment)\b[^.!?\n]{0,50}\b(held|stuck|returned|seized|on hold|undeliverable|detained|confiscated)\b/gi,
+      /\b(legal action|arrest(?:ed)?|warrant|police case|fir|court notice|penalty|case (?:has been )?(?:filed|registered)|cyber ?crime branch|will be (?:fined|prosecuted))\b/gi,
+      /\b(?:block|band|suspend|deactivate|lock)\s+ho\s+(?:jayega|jayegi|jaega|jaegi|sakta hai|sakti hai)\b/gi
+    ],
+    bait: [
+      /\b(congratulations|you(?:'ve| have)? won|winner|lucky (?:draw|winner)|lottery|prize|jackpot|cashback of|reward points?|gift card|free (?:gift|recharge|data|iphone)|claim your|refund(?: of| amount| is| will))\b/gi
+    ],
+    payment: [
+      /\b(pay|deposit|transfer|send|remit)\b[^.!?\n]{0,40}?(?:\b(?:fee|fees|charges?|duty|deposit|processing|upi|gpay|phonepe|paytm)\b|₹\s?\d[\d,]*|\brs\.?\s?\d[\d,]*|\binr\s?\d[\d,]*)/gi,
+      /\b(accept|approve)\b[^.!?\n]{0,25}\b(?:collect|payment) request\b/gi,
+      /\bscan\b[^.!?\n]{0,25}\bqr\b/gi
+    ],
+    contact: [
+      /\b(call|whatsapp|text|contact|dial|message|msg|telegram)\b[^.!?\n]{0,30}?(?:\+?91[\s-]?)?\b[6-9]\d{9}\b/gi
+    ]
+  };
+
+  var CRED_EN = /\b(share|send|tell|give|provide|forward|read out|reply with|text)\b(?:(?![.!?\n])[\s\S]){0,45}?\b(otp|one[- ]time (?:password|pin|code)|pin(?!\s*code)|password|passcode|cvv|security code|card number|card details|net ?banking|login details|upi pin)\b/gi;
+  var CRED_ENTER = /\b(enter|submit|type|fill in)\s+(?:your|ur)\s+(otp|pin(?!\s*code)|password|cvv|card number|card details|upi pin|login details)\b/gi;
+  var CRED_HI = /\b(otp|pin|password|cvv)\b(?:(?![.!?\n])[\s\S]){0,25}?\b(bata(?:o|iye|iyen|yein|ye)|bhej(?:o|iye|iyen|ein)|share karein|share kijiye|dijiye|de do)\b/gi;
+  var NEG_BEFORE = /(do not|don't|dont|do n't|never|should not|shouldn't|must not|mat|nahi)\s+(?:\w+\s+){0,1}$/i;
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function collect(text, re, accept) {
+    var rx = new RegExp(re.source, re.flags.indexOf('g') >= 0 ? re.flags : re.flags + 'g');
+    var out = [], m;
+    while ((m = rx.exec(text)) !== null) {
+      if (m[0].length === 0) { rx.lastIndex++; continue; }
+      var item = { text: m[0], start: m.index, end: m.index + m[0].length };
+      if (!accept || accept(item, m)) out.push(item);
+    }
+    return out;
+  }
+
+  function dedupe(spans) {
+    var s = spans.slice().sort(function (a, b) { return a.start - b.start || (b.end - b.start) - (a.end - a.start); });
+    var out = [];
+    s.forEach(function (x) {
+      var last = out[out.length - 1];
+      if (!last || x.start >= last.end) out.push(x);
+    });
+    return out;
+  }
+
+  function negatedBefore(text, idx) {
+    return NEG_BEFORE.test(text.slice(Math.max(0, idx - 28), idx));
+  }
+
+  function hostOf(raw) {
+    var h = raw.replace(/^[a-z]+:\/\//i, '').split(/[\/?#]/)[0].split(':')[0].toLowerCase();
+    return h.replace(/^www\./, '');
+  }
+
+  function isOfficial(host, official) {
+    var i;
+    for (i = 0; i < official.length; i++) {
+      var d = official[i];
+      if (host === d || host.slice(-(d.length + 1)) === '.' + d) return d;
+    }
+    for (i = 0; i < OFFICIAL_SUFFIXES.length; i++) {
+      var s = OFFICIAL_SUFFIXES[i];
+      if (host.slice(-s.length) === s) return s;
+    }
+    return null;
+  }
+
+  function classifyLink(host, cfg) {
+    var official = isOfficial(host, cfg.official);
+    if (official) return { tier: 'official', official: official };
+    var tokens = host.split(/[.\-_]/);
+    var tld = tokens[tokens.length - 1];
+    var brand = null;
+    tokens.forEach(function (t) {
+      BRANDS.forEach(function (b) {
+        var hit = b.length <= 4 ? (t === b || t.indexOf(b) === 0) : t.indexOf(b) >= 0;
+        if (hit && !brand) brand = b;
+      });
+    });
+    if (brand) return { tier: 'lookalike', brand: brand };
+    if (SHORTENERS.indexOf(host) >= 0) return { tier: 'shortened' };
+    var hyphens = (host.match(/-/g) || []).length;
+    var hasAction = tokens.some(function (t) { return ACTION_WORDS.indexOf(t) >= 0; });
+    var isIP = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+    if (isIP || host.indexOf('xn--') >= 0 || hyphens >= 2 || (hasAction && (BAD_TLDS.indexOf(tld) >= 0 || hyphens >= 1)))
+      return { tier: 'suspicious' };
+    return { tier: 'unknown' };
+  }
+
+  var LINK_TEXT = {
+    lookalike: function (host, c) {
+      return 'This web address uses the name "' + c.brand.toUpperCase() + '" but is not an official domain. Lookalike sites are built to steal logins and OTPs.';
+    },
+    suspicious: function () { return 'This address has features common in scam links, such as extra hyphens, action words or unusual endings.'; },
+    shortened: function () { return 'Shortened links hide where they really lead.'; },
+    unknown: function () { return 'We cannot verify this address. Open it only if you trust the sender.'; }
+  };
+
+  function analyze(input, userCfg) {
+    var cfg = clone(DEFAULTS);
+    if (userCfg) {
+      if (userCfg.points) Object.keys(userCfg.points).forEach(function (k) { if (typeof userCfg.points[k] === 'number' && isFinite(userCfg.points[k])) cfg.points[k] = userCfg.points[k]; });
+      if (typeof userCfg.medium === 'number') cfg.medium = userCfg.medium;
+      if (typeof userCfg.high === 'number') cfg.high = userCfg.high;
+      if (Array.isArray(userCfg.official)) cfg.official = userCfg.official;
+    }
+    if (typeof input !== 'string' || input.trim() === '') return { status: 'empty' };
+    var text = input.length > 5000 ? input.slice(0, 5000) : input;
+    var truncated = input.length > 5000;
+    if (text.trim().length < 12) return { status: 'short' };
+
+    var findings = [];
+
+    // Non-link categories
+    Object.keys(RULES).forEach(function (cat) {
+      var spans = [];
+      RULES[cat].forEach(function (re) { spans = spans.concat(collect(text, re)); });
+      if (cat === 'urgency' && findings.some(function (f) { return f.cat === 'threat'; }) === false) { /* handled below */ }
+      if (spans.length) findings.push({ cat: cat, name: CATEGORY[cat].name, why: CATEGORY[cat].why, critical: false, matches: dedupe(spans) });
+    });
+
+    // "today" counts as pressure only next to a threat
+    var threat = findings.filter(function (f) { return f.cat === 'threat'; })[0];
+    if (threat) {
+      var extra = collect(text, /\b(today|tonight|by tonight)\b/gi);
+      var urg = findings.filter(function (f) { return f.cat === 'urgency'; })[0];
+      if (extra.length) {
+        if (urg) urg.matches = dedupe(urg.matches.concat(extra));
+        else findings.push({ cat: 'urgency', name: CATEGORY.urgency.name, why: CATEGORY.urgency.why, critical: false, matches: dedupe(extra) });
+      }
+    }
+
+    // Credential requests (with negation handling)
+    var cred = [];
+    cred = cred.concat(collect(text, CRED_EN, function (it) { return !negatedBefore(text, it.start); }));
+    cred = cred.concat(collect(text, CRED_ENTER, function (it) { return !negatedBefore(text, it.start); }));
+    cred = cred.concat(collect(text, CRED_HI, function (it) {
+      var win = text.slice(Math.max(0, it.start - 25), it.end + 25);
+      return !/\b(mat|nahi|never|do not|don't|dont)\b/i.test(win);
+    }));
+    if (cred.length) findings.push({ cat: 'credential', name: CATEGORY.credential.name, why: CATEGORY.credential.why, critical: true, matches: dedupe(cred) });
+
+    // Links
+    var links = [];
+    var seen = {};
+    collect(text, URL_RE, function (it) { return text.charAt(it.start - 1) !== '@'; }).forEach(function (it) {
+      var raw = it.text.replace(/[.,;:!?)\]]+$/, '');
+      var end = it.start + raw.length;
+      var host = hostOf(raw);
+      if (!host || seen[host + '@' + it.start]) return;
+      seen[host + '@' + it.start] = 1;
+      var c = classifyLink(host, cfg);
+      links.push({ text: raw, start: it.start, end: end, host: host, tier: c.tier, info: c });
+    });
+    var linkFindings = [];
+    links.forEach(function (l) {
+      if (l.tier === 'official') return;
+      linkFindings.push({
+        cat: 'link', tier: l.tier,
+        name: l.tier === 'lookalike' ? 'Suspicious link (lookalike domain)' : l.tier === 'suspicious' ? 'Suspicious link' : l.tier === 'shortened' ? 'Shortened link' : 'Unverified link',
+        why: LINK_TEXT[l.tier](l.host, l.info),
+        critical: l.tier === 'lookalike' || l.tier === 'suspicious',
+        matches: [{ text: l.text, start: l.start, end: l.end }],
+        rawPoints: cfg.points[l.tier]
+      });
+    });
+    // Count only the highest link once
+    var best = null;
+    linkFindings.forEach(function (f) { if (!best || f.rawPoints > best.rawPoints) best = f; });
+    linkFindings.forEach(function (f) { f.counted = (f === best); f.points = f.counted ? f.rawPoints : 0; findings.push(f); });
+
+    findings.forEach(function (f) {
+      if (f.cat !== 'link') { f.counted = true; f.points = cfg.points[f.cat]; }
+    });
+
+    // Reading order numbering
+    findings.sort(function (a, b) { return a.matches[0].start - b.matches[0].start; });
+    findings.forEach(function (f, i) { f.n = i + 1; });
+
+    var counted = findings.filter(function (f) { return f.counted; });
+    var sum = counted.reduce(function (s, f) { return s + f.points; }, 0);
+
+    // Visible deductions (safe context)
+    var deductions = [];
+    if (/\b(do not|don't|dont|never)\s+share\b[^.!?\n]{0,40}\b(otp|pin|password|cvv)\b|\b(otp|pin|password|cvv)\b[^.!?\n]{0,40}\b(do not|don't|dont|never)\s+share\b/i.test(text))
+      deductions.push({ label: 'The message warns you not to share the OTP/PIN, which genuine messages do.', points: -15 });
+    var nonOfficial = links.filter(function (l) { return l.tier !== 'official'; });
+    if (links.length && !nonOfficial.length)
+      deductions.push({ label: 'Every link goes to an official domain.', points: -10 });
+
+    var raw = Math.max(0, sum + deductions.reduce(function (s, d) { return s + d.points; }, 0));
+
+    // Fairness caps
+    var cats = {};
+    counted.forEach(function (f) { cats[f.cat] = 1; });
+    var catCount = Object.keys(cats).length;
+    var hasCritical = counted.some(function (f) { return f.critical; });
+    var score = Math.min(100, raw);
+    var caps = [];
+    if (!hasCritical && catCount <= 1 && score > cfg.medium - 1) {
+      score = cfg.medium - 1;
+      caps.push('Score limited to Low: only one kind of warning sign was found and it is not critical.');
+    } else if (!hasCritical && catCount < 3 && score > cfg.high - 1) {
+      score = cfg.high - 1;
+      caps.push('Score limited to Medium: High needs a critical sign (such as an OTP request or a lookalike link) or at least three kinds of warning signs.');
+    }
+
+    if (hasCritical && score < cfg.medium) {
+      score = cfg.medium;
+      caps.push('Score raised to Medium: a critical sign was found (an OTP/password request or a lookalike link), and that should never be rated Low.');
+    }
+
+    var level = score >= cfg.high ? 'High' : score >= cfg.medium ? 'Medium' : 'Low';
+
+    var res = {
+      status: 'ok', text: text, truncated: truncated, config: cfg,
+      findings: findings, links: links, deductions: deductions, caps: caps,
+      rawScore: raw, score: score, level: level, categories: Object.keys(cats), hasCritical: hasCritical
+    };
+    res.spans = buildSpans(findings);
+    res.headline = headline(res);
+    res.steps = nextSteps(res);
+    res.share = shareText(res);
+    return res;
+  }
+
+  function buildSpans(findings) {
+    var all = [];
+    findings.forEach(function (f) { f.matches.forEach(function (m) { all.push({ start: m.start, end: m.end, n: f.n, critical: !!f.critical }); }); });
+    all.sort(function (a, b) { return a.start - b.start || (b.end - b.start) - (a.end - a.start); });
+    var out = [];
+    all.forEach(function (x) { var l = out[out.length - 1]; if (!l || x.start >= l.end) out.push(x); });
+    return out;
+  }
+
+  function headline(r) {
+    var n = r.findings.filter(function (f) { return f.counted || f.cat !== 'link'; }).length;
+    if (r.level === 'High') return 'This message shows ' + n + ' warning signs' + (r.hasCritical ? ', including a critical one' : '') + '. Treat it as a scam. Do not click, reply or share anything.';
+    if (r.level === 'Medium') return 'This message has some warning signs. Do not act on it until you have checked it through an official channel.';
+    if (n === 0) return 'No common scam warning signs were found. That does not guarantee a message is genuine, so never share an OTP or password.';
+    return 'Only minor signs were found, not enough to call this risky. Stay careful and check anything that surprises you.';
+  }
+
+  function nextSteps(r) {
+    var s = [];
+    var has = function (c) { return r.findings.some(function (f) { return f.cat === c; }); };
+    var badLinks = r.links.some(function (l) { return l.tier !== 'official'; });
+    if (r.level === 'Low') {
+      s.push('If anything about this message feels off, check it through the official app or website, not through the message.');
+      s.push('Never share an OTP, PIN, password or CVV with anyone, whoever they say they are.');
+      return s;
+    }
+    if (badLinks) s.push('Do not click the link in this message.');
+    if (has('credential')) s.push('Do not share the OTP, PIN, password or CVV. A bank will never ask you for it.');
+    if (has('payment') || has('bait')) s.push('Do not pay any fee or send money to receive a prize, refund or parcel.');
+    if (has('contact')) s.push('Do not call or message the number in the message.');
+    s.push('Contact the bank or service only through its official app, website or the number printed on your card or passbook.');
+    s.push('If you already clicked, shared an OTP or paid, contact your bank straight away and ask them to block the card or account. Report it at cybercrime.gov.in or call 1930 (India).');
+    if (r.level === 'Medium') s.push('If it turns out to be genuine, you will still lose nothing by checking first.');
+    return s;
+  }
+
+  function shareText(r) {
+    if (r.level === 'Low') return '';
+    var signs = r.findings.filter(function (f) { return f.cat !== 'link' || f.counted; }).map(function (f) { return f.name.toLowerCase(); });
+    return 'Scam alert: a message I checked looks like a scam (' + r.level.toUpperCase() + ' risk, ' + r.score + '/100). Warning signs: ' + signs.join(', ') + '. Do not click links or share any OTP. Check only through the official app or website. Report scams at cybercrime.gov.in or call 1930.';
+  }
+
+  return { analyze: analyze, DEFAULTS: DEFAULTS, CATEGORY: CATEGORY };
+});
+
+</script>
+<script>
+(function(){
+  var S = window.ScamSpotter;
+  var EX = [
+    ['SBI KYC scam', 'SBI ALERT: Your KYC is incomplete and your account will be blocked today. Update immediately at http://sbi-kyc-update.example/verify and share the OTP you receive to confirm.'],
+    ['Parcel fee scam', 'Your parcel is held at customs. Pay Rs 49 redelivery fee at http://bit.ly/3xYzAb within 24 hours or it will be returned.'],
+    ['Hinglish scam', 'Aapka SBI account block ho jayega. Turant apna OTP batayein.'],
+    ['Normal: bank OTP', 'Your OTP for login is 482913. Do not share it with anyone. This OTP is valid for 10 minutes. - Axis Bank'],
+    ['Normal: college notice', 'Internal Test 2 will be held on 13 Nov 2026 from 10:00 AM to 11:30 AM in Room 204. Please carry your ID card.']
+  ];
+  var $ = function(id){ return document.getElementById(id); };
+  var msg = $('msg'), err = $('error'), out = $('result');
+  var cfg = JSON.parse(JSON.stringify(S.DEFAULTS));
+  var POINT_LABELS = { urgency:'Fake urgency', threat:'Account threat', credential:'OTP / password request', bait:'Prize or refund bait', payment:'Request to pay', contact:'Private number', lookalike:'Lookalike link', suspicious:'Suspicious link', shortened:'Shortened link', unknown:'Unverified link' };
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text !== undefined) e.textContent = text; return e; }
+
+  EX.forEach(function(x){
+    var b = el('button','chip',x[0]); b.type = 'button';
+    b.addEventListener('click', function(){ msg.value = x[1]; run(); msg.focus(); });
+    $('examples').appendChild(b);
+  });
+
+  function showError(t){ err.textContent = t; err.style.display = 'block'; }
+  function clearError(){ err.textContent = ''; err.style.display = 'none'; }
+
+  function run(){
+    clearError(); out.textContent = '';
+    var r = S.analyze(msg.value, cfg);
+    if (r.status === 'empty'){ showError('Please paste a message first. Copy the text you received and paste it into the box above.'); msg.focus(); return; }
+    if (r.status === 'short'){ showError('That is too short to check. Paste the whole message so there is enough text to look at.'); msg.focus(); return; }
+    render(r);
+  }
+
+  function render(r){
+    var frag = document.createDocumentFragment();
+
+    var c1 = el('section','card');
+    var top = el('div','top');
+    var badge = el('span','badge ' + r.level, (r.level === 'High' ? '⚠ ' : r.level === 'Medium' ? '! ' : '✓ ') + r.level.toUpperCase() + ' RISK');
+    top.appendChild(badge);
+    top.appendChild(el('span','score', 'Score ' + r.score + ' / 100'));
+    c1.appendChild(top);
+    var meter = el('div','meter');
+    meter.style.setProperty('--m', r.config.medium + '%'); meter.style.setProperty('--h', r.config.high + '%');
+    var pin = el('div','pin'); pin.style.left = Math.min(99, Math.max(1, r.score)) + '%'; meter.appendChild(pin);
+    c1.appendChild(meter);
+    var sc = el('div','scale'); sc.appendChild(el('span','','Low 0–' + (r.config.medium - 1))); sc.appendChild(el('span','','Medium ' + r.config.medium + '–' + (r.config.high - 1))); sc.appendChild(el('span','','High ' + r.config.high + '–100')); c1.appendChild(sc);
+    c1.appendChild(el('p','',r.headline));
+    if (r.truncated) c1.appendChild(el('p','note','Long message: only the first 5,000 characters were checked.'));
+    frag.appendChild(c1);
+
+    var c2 = el('section','card'); c2.appendChild(el('h2','','Your message, with warning signs marked'));
+    var box = el('div','msg'); var pos = 0;
+    r.spans.forEach(function(s){
+      if (s.start > pos) box.appendChild(document.createTextNode(r.text.slice(pos, s.start)));
+      var m = el('mark', s.critical ? 'crit' : '', r.text.slice(s.start, s.end));
+      m.appendChild(el('sup','', String(s.n)));
+      box.appendChild(m); pos = s.end;
+    });
+    if (pos < r.text.length) box.appendChild(document.createTextNode(r.text.slice(pos)));
+    c2.appendChild(box);
+    if (!r.spans.length) c2.appendChild(el('p','note','Nothing in this message matched a warning sign.'));
+    frag.appendChild(c2);
+
+    if (r.findings.length || r.deductions.length){
+      var c3 = el('section','card'); c3.appendChild(el('h2','','What we found and why it matters'));
+      r.findings.forEach(function(f){
+        var row = el('div','f');
+        row.appendChild(el('div','num',String(f.n)));
+        row.appendChild(el('div','t',f.name));
+        row.appendChild(el('div','pts' + (f.points ? '' : ' zero'), '+' + f.points));
+        var q = el('div','q'); q.appendChild(document.createTextNode('Found: ')); var b = el('b','', f.matches.map(function(m){ return '“' + m.text + '”'; }).join(', ')); q.appendChild(b); row.appendChild(q);
+        var why = f.why + (f.cat === 'link' && !f.counted ? ' (Only the riskiest link adds points.)' : '');
+        row.appendChild(el('div','w', why));
+        c3.appendChild(row);
+      });
+      r.deductions.forEach(function(d){
+        var row = el('div','f'); row.appendChild(el('div','num','−'));
+        row.appendChild(el('div','t','Safe sign')); row.appendChild(el('div','pts zero', String(d.points)));
+        row.appendChild(el('div','w', d.label)); c3.appendChild(row);
+      });
+      var tot = el('p','note','Total: ' + r.rawScore + ' points' + (r.score !== r.rawScore ? ', shown as ' + r.score + ' after the fairness checks below' : '') + '. Scores are capped at 100.');
+      c3.appendChild(tot);
+      if (r.caps.length){ var ul = el('ul','clean'); r.caps.forEach(function(c){ ul.appendChild(el('li','',c)); }); c3.appendChild(el('p','note','Fairness check:')); c3.appendChild(ul); }
+      frag.appendChild(c3);
+    }
+
+    var okLinks = r.links.filter(function(l){ return l.tier === 'official'; });
+    if (okLinks.length){
+      var c4 = el('section','card'); c4.appendChild(el('h2','','Links that look official'));
+      var ul2 = el('ul','clean'); okLinks.forEach(function(l){ ul2.appendChild(el('li','', l.text + ' goes to an official domain (' + l.info.official + ').')); }); c4.appendChild(ul2);
+      frag.appendChild(c4);
+    }
+
+    var c5 = el('section','card'); c5.appendChild(el('h2','','What to do next'));
+    var ol = el('ul','clean'); r.steps.forEach(function(s){ ol.appendChild(el('li','',s)); }); c5.appendChild(ol);
+    var row = el('div','row');
+    if (r.share){
+      var cp = el('button','', 'Copy a warning for family'); cp.type = 'button';
+      var done = el('span','ok','');
+      cp.addEventListener('click', function(){
+        var finish = function(){ done.textContent = 'Copied. Paste it into your family group.'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(r.share).then(finish, function(){ fallback(r.share); finish(); });
+        else { fallback(r.share); finish(); }
+      });
+      row.appendChild(cp); row.appendChild(done);
+    }
+    c5.appendChild(row);
+    var fb = el('div','row'); fb.appendChild(el('span','note','Was this helpful?'));
+    ['Yes','No'].forEach(function(t){ var b = el('button','chip',t); b.type='button'; b.addEventListener('click', function(){ fb.textContent = ''; fb.appendChild(el('span','ok','Thank you for the feedback.')); }); fb.appendChild(b); });
+    c5.appendChild(fb);
+    frag.appendChild(c5);
+
+    out.appendChild(frag);
+    c1.scrollIntoView && c1.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  function fallback(t){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); }
+
+  $('check').addEventListener('click', run);
+  $('clear').addEventListener('click', function(){ msg.value = ''; out.textContent = ''; clearError(); msg.focus(); });
+  msg.addEventListener('keydown', function(e){ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
+
+  // Tuning panel
+  function buildTune(){
+    var g = $('points'); g.textContent = '';
+    Object.keys(POINT_LABELS).forEach(function(k){
+      var l = el('label','',POINT_LABELS[k]); var i = el('input'); i.type='number'; i.min='0'; i.max='100'; i.value = cfg.points[k]; i.id = 'p-' + k;
+      i.addEventListener('input', function(){ var v = parseInt(i.value, 10); if (!isNaN(v)) { cfg.points[k] = Math.max(0, Math.min(100, v)); again(); } });
+      l.appendChild(i); g.appendChild(l);
+    });
+    $('t-medium').value = cfg.medium; $('t-high').value = cfg.high;
+    $('domains').value = cfg.official.join('\n');
+  }
+  function again(){ if (msg.value.trim()) { var y = window.scrollY; run(); window.scrollTo(0, y); } }
+  $('t-medium').addEventListener('input', function(e){ var v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 1 && v < cfg.high) { cfg.medium = v; again(); } });
+  $('t-high').addEventListener('input', function(e){ var v = parseInt(e.target.value, 10); if (!isNaN(v) && v > cfg.medium && v <= 100) { cfg.high = v; again(); } });
+  $('domains').addEventListener('input', function(e){ cfg.official = e.target.value.split(/\s+/).map(function(x){ return x.trim().toLowerCase(); }).filter(Boolean); again(); });
+  $('reset').addEventListener('click', function(){ cfg = JSON.parse(JSON.stringify(S.DEFAULTS)); buildTune(); again(); });
+  buildTune();
+})();
+</script>
+</body>
+</html>
